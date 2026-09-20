@@ -80,10 +80,6 @@ Verify with `curl http://localhost:8000/api/health`.
 
 Interactive API docs: http://localhost:8000/docs
 
-To wipe and regenerate demo data at any time:
-`curl -X POST http://localhost:8000/api/admin/reseed`
-(also available as a "Reset demo data" button in the UI header).
-
 ### 2. Frontend (React + Vite)
 
 ```bash
@@ -95,54 +91,6 @@ npm run dev
 Open http://localhost:5173. It talks to the backend at
 `http://localhost:8000` by default (configurable via `frontend/.env`,
 `VITE_API_BASE_URL`).
-
-### Demo flow (see Section 12 of the build spec)
-
-1. Open **Block Plan Dashboard** → toggle to **Before · Manual/Naive** —
-   note the red-outlined conflicting blocks.
-2. Toggle to **After · AI-Optimized** — conflicts drop to zero; the metrics
-   bar shows the concrete downtime-reduction % and conflicts-avoided count.
-3. Click any block to see its priority reasoning (severity, overdue days,
-   traffic density, coordination bonus).
-4. Go to **Submit Request**, add a new live request through one of the three
-   department tabs — it lands in the unified queue immediately.
-5. Back on the dashboard, re-open the plan (horizon toggle or reload) to see
-   it picked up and scheduled.
-6. Click a block → **Override this block** to demonstrate what-if
-   re-optimization.
-7. Toggle **Weekly ↔ Monthly** to show both required time horizons.
-
-## Project layout
-
-```
-backend/
-  app/
-    main.py                 FastAPI app, CORS, startup auto-seed
-    models.py                SQLAlchemy schema (Section 7 of the spec)
-    schemas.py                Pydantic request/response models
-    db.py                      SQLite engine/session
-    routers/
-      requests.py              Unified queue submit/list/delete (BDMS-lite)
-      sections.py               Real section list + network-impact map
-      plans.py                   Plan / compare / what-if-override endpoints
-      admin.py                    Reseed
-    services/
-      ingest.py                Real timetable → sections + free-window derivation
-      generate_synthetic_data.py  Synthetic TMS/SMMS/TDMS requests, real-anchored
-      seed.py                    Wires the above into the DB
-      priority.py                 Rule-based priority scoring model
-      optimizer.py                 OR-Tools CP-SAT optimizer + naive baseline + compare
-    data/
-      seed_real_timetable.py    Real-station-anchored timetable generator (Appendix A schema)
-      real_timetable.csv, *.csv  Generated data artifacts
-frontend/
-  src/
-    App.jsx, api.js, constants.js, utils.js
-    components/                 TopNav, RequestForm, RequestQueue, Dashboard,
-                                 GanttChart, MetricsPanel, NetworkImpactPanel,
-                                 OverrideModal, Toast
-SIH26027_Build_Spec.pdf        The original brief this was built against
-```
 
 ## Data provenance note
 
@@ -163,15 +111,3 @@ daily train frequency so busier/real corridors realistically accumulate more
 defects — explainable to judges in one sentence: *"realistic synthetic data
 anchored to real Indian Railways timetable structure."*
 
-## Troubleshooting
-
-- **`pip install` fails building `pydantic-core` / ortools** — you're
-  likely on a Python version newer than what OR-Tools/pydantic-core ship
-  prebuilt wheels for yet (e.g. 3.14). Use Python 3.10–3.13 instead
-  (`py -0p` on Windows lists installed interpreters;
-  `py -3.10 -m venv venv`).
-- **Dashboard shows a spinner forever** — check the backend is running on
-  port 8000 and `frontend/.env`'s `VITE_API_BASE_URL` points at it.
-- **CORS errors in the browser console** — the backend allows all origins
-  in `main.py` for this prototype; make sure you're hitting the FastAPI
-  process, not a stale cached one.
